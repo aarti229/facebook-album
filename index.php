@@ -1,81 +1,261 @@
 <?php
-session_start();
-include  '/src/Facebook/autoload.php';
+    require_once( 'includes.php' );
+?><!DOCTYPE html>
+<html>
+	<head>
+		<title>Facebook Album Challenge</title>
 
-$fb = new Facebook\Facebook([
-  'app_id' => '1532194200421539',
-  'app_secret' => '75654e3dc478e87580261fa9b568ff1f',
-  'default_graph_version' => 'v2.4',
-  ]);
+		<link rel="shortcut icon" type="image/jpg" href="libs/resources/img/favicon.jpg"/>
+		<link rel="stylesheet" type="text/css" href="libs/resources/css/jquery.fancybox.css" />
+		<link rel="stylesheet" type="text/css" href="libs/resources/css/bootstrap.css" />
+		<link rel="stylesheet" type="text/css" href="libs/resources/css/style.css" />
 
-$helper = $fb->getRedirectLoginHelper();
+		<script src="libs/resources/js/jquery-2.1.1.min.js"></script>
+		<script src="libs/resources/js/spin.min.js"></script>
+		<script src="libs/resources/js/jquery.fancybox.js" type="text/javascript" charset="utf-8"></script>
+		<script src="libs/resources/js/bootstrap.min.js"></script>
+	</head>
+	<body>
+		<?php
+		use Facebook\GraphObject;
+		use Facebook\GraphSessionInfo;
+		use Facebook\Entities\AccessToken;
+		use Facebook\HttpClients\FacebookHttpable;
+		use Facebook\HttpClients\FacebookCurl;
+		use Facebook\HttpClients\FacebookCurlHttpClient;
+		use Facebook\FacebookSession;
+		use Facebook\FacebookRedirectLoginHelper;
+		use Facebook\FacebookRequest;
+		use Facebook\FacebookResponse;
+		use Facebook\FacebookSDKException;
+		use Facebook\FacebookRequestException;
+		use Facebook\FacebookAuthorizationException;
 
-$permissions = ['email']; // optional
-	
-try {
-	if (isset($_SESSION['facebook_access_token'])) {
-		$accessToken = $_SESSION['facebook_access_token'];
-	} else {
-  		$accessToken = $helper->getAccessToken();
-	}
-} catch(Facebook\Exceptions\FacebookResponseException $e) {
- 	// When Graph returns an error
- 	echo 'Graph returned an error: ' . $e->getMessage();
+		FacebookSession::setDefaultApplication( $fb_app_id, $fb_secret_id );
 
-  	exit;
-} catch(Facebook\Exceptions\FacebookSDKException $e) {
- 	// When validation fails or other local issues
-	echo 'Facebook SDK returned an error: ' . $e->getMessage();
-  	exit;
- }
+		// login helper with redirect_uri
+		$helper = new FacebookRedirectLoginHelper( $fb_login_url );
+		
+		// see if a existing session exists
+		if ( isset( $_SESSION ) && isset( $_SESSION['fb_token'] ) ) {
+			// create new session from saved access_token
+			$session = new FacebookSession( $_SESSION['fb_token'] );
 
-if (isset($accessToken)) {
-	if (isset($_SESSION['facebook_access_token'])) {
-		$fb->setDefaultAccessToken($_SESSION['facebook_access_token']);
-	} else {
-		// getting short-lived access token
-		$_SESSION['facebook_access_token'] = (string) $accessToken;
+			try {
+				if ( !$session->validate() ) {
+				  $session = null;
+				}
+			} catch ( Exception $e ) {
+				// catch any exceptions
+				$session = null;
+			}
+		}  
+		 
+		if ( !isset( $session ) || $session === null ) {
+			try {
+				$session = $helper->getSessionFromRedirect();
+			} catch( FacebookRequestException $ex ) {
+				print_r( $ex );
+			} catch( Exception $ex ) {
+				print_r( $ex );
+			}
+		}
 
-	  	// OAuth 2.0 client handler
-		$oAuth2Client = $fb->getOAuth2Client();
+		$google_session_token = "";
 
-		// Exchanges a short-lived access token for a long-lived one
-		$longLivedAccessToken = $oAuth2Client->getLongLivedAccessToken($_SESSION['facebook_access_token']);
+		// see if we have a session
+		if ( isset( $session ) ) {
 
-		$_SESSION['facebook_access_token'] = (string) $longLivedAccessToken;
+			// require_once( 'libs/resize_image.php' );
 
-		// setting default access token to be used in script
-		$fb->setDefaultAccessToken($_SESSION['facebook_access_token']);
-	}
+			$_SESSION['fb_login_session'] = $session;
+			$_SESSION['fb_token'] = $session->getToken();
 
-	// redirect the user back to the same page if it has "code" GET variable
-	if (isset($_GET['code'])) {
-		header('Location: ./');
-	}
 
-	// getting basic info about user
-	try {
-		$profile_request = $fb->get('/me?fields=name,first_name,last_name,email');
-		$profile = $profile_request->getGraphNode()->asArray();
-	} catch(Facebook\Exceptions\FacebookResponseException $e) {
-		// When Graph returns an error
-		echo 'Graph returned an error: ' . $e->getMessage();
-		session_destroy();
-		// redirecting user back to app login page
-		header("Location: ./");
-		exit;
-	} catch(Facebook\Exceptions\FacebookSDKException $e) {
-		// When validation fails or other local issues
-		echo 'Facebook SDK returned an error: ' . $e->getMessage();
-		exit;
-	}
-	
-	// printing $profile array on the screen which holds the basic info about user
-	print_r($profile);
+			// create a session using saved token or the new one we generated at login
+			$session = new FacebookSession( $session->getToken() );
+			
+			$request_user_details = new FacebookRequest( $session, 'GET', '/me?fields=id,name' );
+			
+			$response_user_details = $request_user_details->execute();
+			$user_details = $response_user_details->getGraphObject()->asArray();
+			
+			$user_id = $user_details['id'];
+			$user_name = $user_details['name'];
+			
+			
+			if ( isset( $_SESSION['google_session_token'] ) ) {
+				$google_session_token = $_SESSION['google_session_token'];
+			}
+			?>
+			<nav class="navbar navbar-default " role="navigation">
+				<div class="container">
+					<div class="row">
+						<div class="col-sm-12">
+							<div class="col-xs-12 col-sm-2 text-center pull-right">
+								<button class="dropdown-toggle btn-default btn" id="menu1" type="button" data-toggle="dropdown">
+									<img src="<?php echo 'https://graph.facebook.com/'.$user_id.'/picture';?>" id="user_photo" class="img-circle" />
+									<span class="caret"></span>
+								</button>
+								<ul class="dropdown-menu" role="menu" aria-labelledby="menu1">
+								  <li role="presentation"><a href="http://facebook.com/" target="_blanck">Timeline</a></li>
+								  <li role="presentation"><a href="http://facebook.com/<?=$user_id; ?>" target="_blanck">Profile</a></li>
+								  <li role="presentation"><a href="logout.php" >Logout</a></li>
+								</ul>	
+							</div>
+							<div class="col-xs-12 col-sm-3 text-center">
+								<a class="" href="http://facebook.com/" id="username">
+									<span style="margin-left: 5px;"><?php echo $user_name;?></span>
+								</a>
+							</div>
+						</div>
+					</div>
+				</div>
+			</nav>
+			<div class="container" id="main-div">
+				<div class="row">
+					<span id="loader" class="navbar-fixed-top"></span>
+					<div class="modal fade" id="download-modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+							<div class="modal-dialog">
+								<div class="modal-content">
+									<div class="modal-header">
+										<button type="button" class="close" data-dismiss="modal">
+											<span aria-hidden="true">&times;</span><span class="sr-only">Close</span>
+										</button>
+										<h4 class="modal-title" id="myModalLabel">Albums Report</h4>
+									</div>
+									<div class="modal-body" id="display-response">
+										<!-- Response is displayed over here -->
+									</div>
+									<div class="modal-footer">
+										<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+									</div>
+								</div>
+							</div>
+						</div>
+				</div>
+				
+				<div class="row">
+					<?php
+						// graph api request for user data
+						$request_albums = new FacebookRequest( $session, 'GET', '/me/albums?fields=id,cover_photo,from,name' );
+						$response_albums = $request_albums->execute();
+						// get response
+						$albums = $response_albums->getGraphObject()->asArray();
+						if ( !empty( $albums ) ) {
+							foreach ( $albums['data'] as $album ) {
+								$album = (array) $album;
+								$request_album_photos = new FacebookRequest( $session,'GET', '/'.$album['id'].'/photos?fields=source' );
+								$response_album_photos = $request_album_photos->execute();			
+								$album_photos = $response_album_photos->getGraphObject()->asArray();
+								if ( !empty( $album_photos ) ) {
+									foreach ( $album_photos['data'] as $album_photo ) {
+										$album_photo = (array) $album_photo;
+										$cover_photo = $album['cover_photo']->id;
+										if ( $cover_photo == $album_photo['id'] ) {
+											$album_cover_photo = $album_photo['source'];
+											$album_resized_cover_photo = $album_cover_photo;
+										?>
+										<div class="col-md-3">
+											<div class="thumbnail no-border center">
+												
+												<a href="<?php echo $album_photo['source'];?>" class="fancybox" rel="<?php echo $album['id'];?>">
+												  <img src="<?php echo $album_resized_cover_photo;?>" class="thm image-responsive img-rounded" alt="<?php echo $album['name'];?>" />
+												</a>
+												<div class="caption">
+												<h4><?php echo $album['name'].' ('.count($album_photos['data']).')';?></h4>
+													<button rel="<?php echo $album['id'].','.$album['name'];?>" class="single-download btn btn-primary pull-left" title="Download Album">
+														<span class="glyphicon glyphicon-download-alt" aria-hidden="true"></span>
+													</button>
+												</div>
+											</div>
+										</div>
+										<?php
+										} else {
+										?>
+											<a href="<?php echo $album_photo['source'];?>" class="fancybox" rel="<?php echo $album['id'];?>" style="display:none;"></a>
+										<?php
+										}
+									}
+								}
+							}
+						}
+						?>
+				</div>
+			</div>
+		<?php
+		} else {
+			$perm = array( "scope" => "email, user_photos" );
+		?>
+			<div id="login-div" class="row">
+				<a id="login-link" class="btn btn-primary btn-lg" href="<?php echo $helper->getLoginUrl( $perm );?>">Facebook</a>
+			</div>
+		<?php
+		}
+		?>
+				<script type="text/javascript" charset="utf-8">
+			$( document ).ready(function() {
+				var opts = {
+				  lines: 15 // The number of lines to draw
+				, length: 0 // The length of each line
+				, width: 6 // The line thickness
+				, radius: 56 // The radius of the inner circle
+				, scale: 1.25 // Scales overall size of the spinner
+				, corners: 0.9 // Corner roundness (0..1)
+				, color: '#000' // #rgb or #rrggbb or array of colors
+				, opacity: 0 // Opacity of the lines
+				, rotate: 35 // The rotation offset
+				, direction: 1 // 1: clockwise, -1: counterclockwise
+				, speed: 0.8 // Rounds per second
+				, trail: 60 // Afterglow percentage
+				, fps: 20 // Frames per second when using setTimeout() as a fallback for CSS
+				, zIndex: 2e9 // The z-index (defaults to 2000000000)
+				, className: 'spinner' // The CSS class to assign to the spinner
+				, top: '50%' // Top position relative to parent
+				, left: '50%' // Left position relative to parent
+				, shadow: false // Whether to render a shadow
+				, hwaccel: false // Whether to use hardware acceleration
+				, position: 'absolute' // Element positioning
+				};
+				var target = document.getElementById('loader');
 
-  	// Now you can redirect to another page and use the access token from $_SESSION['facebook_access_token']
-} else {
-	// replace your website URL same as added in the developers.facebook.com/apps e.g. if you used http instead of https and you used non-www version or www version of your website then you must add the same here
-	$loginUrl = $helper->getLoginUrl('http://yahil.esy.es/rtCamp-php-Assignment/index.php', $permissions);
-	echo '<a href="' . $loginUrl . '">Log in with Facebook!</a>';
-}
+				$('.fancybox').fancybox({
+					autoPlay: true
+				});
+
+				function append_download_link(url) {
+					var spinner = new Spinner(opts).spin(target);
+
+					$.ajax({
+						url:url,
+						success:function(result){
+							
+							$("#display-response").html(result);
+							spinner.stop();
+							$("#download-modal").modal({
+								show: true
+							});
+						}
+					});
+				}
+
+				$(".single-download").on("click", function() {
+					var rel = $(this).attr("rel");
+					var album = rel.split(",");
+
+					append_download_link("download_album.php?zip=1&single_album="+album[0]+","+album[1]);
+				});
+			});
+		</script>
+<script>
+		$(document).ready(function(){
+			$(".thumbnail").each(function() {  
+			 var imgsrc = ($(this).find('img').attr('src'));
+			 
+			 $(this).css('background-image', 'url("' + imgsrc + '")');
+
+			 });    
+		});
+		</script>
+	</body>
+</html>
