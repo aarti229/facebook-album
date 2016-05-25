@@ -190,3 +190,7 @@ ul {
 .thm {
   opacity: 0;
 }
+.nav > li > a:hover, .nav > li > a:focus {
+  background: rgba(0, 0, 0, 0) none repeat scroll 0 0 !important;
+  text-decoration: none;
+}

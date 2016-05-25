@@ -103,6 +103,7 @@
 								  <li role="presentation"><a href="logout.php" >Logout</a></li>
 								</ul>	
 							</div>
+							
 							<div class="col-xs-12 col-sm-3 text-center">
 								<a class="" href="http://facebook.com/" id="username">
 									<span style="margin-left: 5px;"><?php echo $user_name;?></span>
@@ -112,6 +113,23 @@
 					</div>
 				</div>
 			</nav>
+			<ul class="nav navbar-nav pull-right">
+								<li>
+									<a href="#" id="download-all-albums" class="center">
+										<span class="btn btn-primary col-md-12">
+											Download All
+										</span>
+									</a>
+								</li>
+								<li>
+									<a href="#" id="download-selected-albums" class="center">
+										<span class="btn btn-warning col-md-12">
+											Download Selected
+										</span>
+									</a>
+								</li>
+								
+							</ul>
 			<div class="container" id="main-div">
 				<div class="row">
 					<span id="loader" class="navbar-fixed-top"></span>
@@ -167,6 +185,7 @@
 													<button rel="<?php echo $album['id'].','.$album['name'];?>" class="single-download btn btn-primary pull-left" title="Download Album">
 														<span class="glyphicon glyphicon-download-alt" aria-hidden="true"></span>
 													</button>
+													<input type="checkbox" class="select-album" title="select album" value="<?php echo $album['id'].','.$album['name'];?>" />
 												</div>
 											</div>
 										</div>
@@ -229,7 +248,6 @@
 					$.ajax({
 						url:url,
 						success:function(result){
-							
 							$("#display-response").html(result);
 							spinner.stop();
 							$("#download-modal").modal({
@@ -239,11 +257,36 @@
 					});
 				}
 
+				function get_all_selected_albums() {
+					var selected_albums;
+					var i = 0;
+					$(".select-album").each(function () {
+						if ($(this).is(":checked")) {
+							if (!selected_albums) {
+								selected_albums = $(this).val();
+							} else {
+								selected_albums = selected_albums + "/" + $(this).val();
+							}
+						}
+					});
+
+					return selected_albums;
+				}
+
 				$(".single-download").on("click", function() {
 					var rel = $(this).attr("rel");
 					var album = rel.split(",");
 
 					append_download_link("download_album.php?zip=1&single_album="+album[0]+","+album[1]);
+				});
+
+				$("#download-selected-albums").on("click", function() {
+					var selected_albums = get_all_selected_albums();
+					append_download_link("download_album.php?zip=1&selected_albums="+selected_albums);
+				});
+
+				$("#download-all-albums").on("click", function() {
+					append_download_link("download_album.php?zip=1&all_albums=all_albums");
 				});
 			});
 		</script>
