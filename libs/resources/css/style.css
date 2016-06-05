@@ -1,3 +1,51 @@
+/* page loder start */
+#preloader {
+	position: fixed;
+	top:0;
+	left:0;
+	right:0;
+	bottom:0;
+	background-color: #fff;
+	z-index:9999999; 
+	
+}
+#status {
+	background-image: url("../img/fav-icon.png");
+	background-position: center center;
+	background-repeat: no-repeat;
+	background-size: 100% auto;
+	height: 100px;
+	margin: auto;
+	padding-top: 100vh;
+	width: 100px;
+	-webkit-animation: logo-ani 2s infinite; /* Safari 4+ */
+	-moz-animation:    logo-ani 2s infinite; /* Fx 5+ */
+	-o-animation:      logo-ani 2s infinite; /* Opera 12+ */
+	animation:         logo-ani 2s infinite; /* IE 10+, Fx 29+ */
+}
+.thmb-light {
+	margin: 15px auto;     
+}
+/* Chrome, Safari, Opera */
+@-webkit-keyframes logo-ani {
+	100% {
+		-webkit-transform: rotate(360deg);
+		-moz-transform: rotate(360deg);
+		-0-transform: rotate(360deg);
+		transform: rotate(360deg);
+	}
+}
+
+/* Standard syntax */
+@keyframes logo-ani {
+	100% {
+		-webkit-transform: rotate(360deg);
+		-moz-transform: rotate(360deg);
+		-0-transform: rotate(360deg);
+		transform: rotate(360deg);
+	}
+}
+/* page loder end */
 .center {
 	text-align: center !important;
 }
@@ -81,7 +129,7 @@ ul {
 }
 
 #main-div {
-	margin-top: 110px;
+	margin-top: 20px;
 }
 
 .modal-content {
@@ -150,15 +198,23 @@ ul {
 .btn .caret {
   margin-left: 5px;
 }
-
 .thumbnail h4 {
   color: #fff;
-  display: block;
-  font-size: 12px;
+  display: inline-block;
+  font-size: 14px;
   margin: 0;
-  padding: 2px 6px;
+  padding: 0;
   transition: all 0.3s ease 0s;
-  width: 100%;
+}
+.single-download {
+  background: transparent none repeat scroll 0 0;
+  border: medium none;
+  color: #fff;
+  float: right;
+}
+.caption .select-album{
+	float: right;
+	margin-top: 12px;
 }
 .caption {
   bottom: 0;
@@ -167,6 +223,21 @@ ul {
   position: absolute;
   transition: all 0.3s ease 0s;
   width: 100%;
+  padding: 0 13px;
+}
+.caption {
+  background: rgba(0, 0, 0, 0) linear-gradient(transparent, rgba(0, 0, 0, 0.6)) repeat scroll 0 0;
+  bottom: 0;
+  display: none;
+  opacity: 0;
+  padding: 10px 9px !important;
+  position: absolute;
+  transition: all 0.3s ease 0s;
+  width: 100%;
+}	
+.caption .select-album {
+  float: left;
+  margin-top: 0;
 }
 .thumbnail:hover .caption {
   opacity: 1;
@@ -193,4 +264,21 @@ ul {
 .nav > li > a:hover, .nav > li > a:focus {
   background: rgba(0, 0, 0, 0) none repeat scroll 0 0 !important;
   text-decoration: none;
+}
+.albm-thmb li {
+  cursor: pointer;
+}
+.footer-copyright {
+  background-color: #f8f8f8;
+  border-top: 1px solid #e7e7e7;
+  bottom: 0;
+  line-height: 25px;
+  position: fixed;
+}
+#main-div {
+  margin-bottom: 25px;
+}
+.click-btn .col-sm-3 {
+  margin-bottom: 10px;
+  overflow: hidden;
 }

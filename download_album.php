@@ -75,7 +75,7 @@
 					download_album( $session, $album_download_directory, $album['id'], $album['name'] );
 				}
 			}
-		}
+		} 
 	}
 
 

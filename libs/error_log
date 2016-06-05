@@ -1,0 +1,2 @@
+[03-Jun-2016 13:27:40 America/Chicago] PHP Warning:  require_once(Zend/Loader.php): failed to open stream: No such file or directory in /home/fzwebtec/public_html/rtCamp-Challenge/libs/google_login.php on line 5
+[03-Jun-2016 13:27:40 America/Chicago] PHP Fatal error:  require_once(): Failed opening required 'Zend/Loader.php' (include_path='.:/opt/php54/lib/php') in /home/fzwebtec/public_html/rtCamp-Challenge/libs/google_login.php on line 5
